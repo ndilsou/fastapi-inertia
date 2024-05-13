@@ -6,11 +6,18 @@ from typing import Any, Callable, Dict, Optional, TypeVar, TypedDict, Union, cas
 import json
 from pydantic import BaseModel
 from starlette.responses import RedirectResponse
+from functools import lru_cache
+from dataclasses import dataclass
 
+from .templating import InertiaExtension
 from .config import InertiaConfig
 from .exceptions import InertiaVersionConflictException
 from .utils import LazyProp
-from dataclasses import dataclass
+
+try:
+    from httpx import AsyncClient
+except ModuleNotFoundError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +49,15 @@ class Inertia:
         Helper class to store the CSS and JS files for Inertia.js
         """
 
-        css_file: Union[str, None]
+        css_files: list[str]
         js_file: str
 
     _request: Request
+    _config: InertiaConfig
     _component: str
     _props: dict[str, Any]
     _inertia_files: InertiaFiles
+    _http_client: Optional["AsyncClient"]
 
     def __init__(self, request: Request, config_: InertiaConfig) -> None:
         """
@@ -60,6 +69,7 @@ class Inertia:
         self._component = ""
         self._props = {}
         self._config = config_
+        self._http_client = None
         self._set_inertia_files()
 
         if self._is_stale:
@@ -143,20 +153,21 @@ class Inertia:
         Set the Inertia files (CSS and JS) based on the configuration
         """
         if self._config.environment == "production" or self._config.ssr_enabled:
-            with open(self._config.manifest_json_path, "r") as manifest_file:
-                manifest = json.load(manifest_file)
+            manifest = _read_manifest_file(self._config.manifest_json_path)
 
-            extension = "ts" if self._config.use_typescript else "js"
+            asset_manifest = manifest[
+                f"{self._config.root_directory}/{self._config.entrypoint_filename}"
+            ]
 
-            css_file = manifest[f"src/main.{extension}"]["css"][0]
-            js_file = manifest[f"src/main.{extension}"]["file"]
+            css_files = asset_manifest.get("css", [])
+            js_file = asset_manifest["file"]
+
             self._inertia_files = self.InertiaFiles(
-                css_file=f"/src/{css_file}", js_file=f"/{js_file}"
+                css_files=css_files, js_file=js_file
             )
         else:
-            extension = "ts" if self._config.use_typescript else "js"
-            js_file = f"{self._config.dev_url}/src/main.{extension}"
-            self._inertia_files = self.InertiaFiles(css_file=None, js_file=js_file)
+            js_file = f"{self._config.dev_url}/{self._config.root_directory}/{self._config.entrypoint_filename}"
+            self._inertia_files = self.InertiaFiles(css_files=[], js_file=js_file)
 
     @classmethod
     def _deep_transform_callables(
@@ -201,43 +212,27 @@ class Inertia:
 
         return self._deep_transform_callables(_props)
 
-    def _get_html_content(self, head: str, body: str) -> str:
+    def _get_or_create_httpx_client(self) -> "AsyncClient":
         """
-        Get the HTML content for the response
-        :param head: The content for the head tag
-        :param body: The content for the body tag
-        :return: The HTML content
+        Get or create the httpx async client
+        :return: The httpx client
         """
-        css_link = (
-            f'<link rel="stylesheet" href="{self._inertia_files.css_file}">'
-            if self._inertia_files.css_file
-            else ""
-        )
-        return f"""
-                   <!DOCTYPE html>
-                   <html>
-                       <head>
-                            <meta charset="UTF-8">
-                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                            {head}
-                            {css_link}
-                        </head>
-                        <body>
-                            {body}
-                            <script type="module" src="{self._inertia_files.js_file}"></script>
-                       </body>
-                   </html>
-                   """
+
+        if self._http_client is None:
+            self._http_client = AsyncClient()
+
+        return self._http_client
 
     async def _render_ssr(self) -> HTMLResponse:
         """
         Render the page using SSR, calling the Inertia SSR server.
         :return: The HTML response
         """
-        import requests
+
+        client: AsyncClient = self._get_or_create_httpx_client()
 
         data = json.dumps(self._get_page_data(), cls=self._config.json_encoder)
-        response = requests.post(
+        response = await client.post(
             f"{self._config.ssr_url}/render",
             json=data,
             headers={"Content-Type": "application/json"},
@@ -249,9 +244,22 @@ class Inertia:
         displayable_head = "\n".join(head)
         body = response_json["body"]
 
-        html_content = self._get_html_content(displayable_head, body)
-
-        return HTMLResponse(content=html_content, status_code=200)
+        return self._config.templates.TemplateResponse(
+            name=self._config.root_template_filename,
+            request=self._request,
+            context={
+                "inertia": {
+                    "environment": self._config.environment,
+                    "is_react": self._config.is_react,
+                    "dev_url": self._config.dev_url,
+                    "is_ssr": True,
+                    "ssr_head": displayable_head,
+                    "ssr_body": body,
+                    "js": self._inertia_files.js_file,
+                    "css": self._inertia_files.css_files,
+                },
+            },
+        )
 
     def share(self, **props: Any) -> None:
         """
@@ -349,20 +357,32 @@ class Inertia:
         page_json = json.dumps(
             json.dumps(self._get_page_data(), cls=self._config.json_encoder)
         )
-        body = f"<div id='app' data-page='{page_json}'></div>"
-        html_content = self._get_html_content("", body)
 
-        return HTMLResponse(content=html_content)
+        return self._config.templates.TemplateResponse(
+            name=self._config.root_template_filename,
+            request=self._request,
+            context={
+                "inertia": {
+                    "environment": self._config.environment,
+                    "is_react": self._config.is_react,
+                    "dev_url": self._config.dev_url,
+                    "is_ssr": False,
+                    "data": page_json,
+                    "js": self._inertia_files.js_file,
+                    "css": self._inertia_files.css_files,
+                },
+            },
+        )
 
 
-def inertia_dependency_factory(
-    config_: InertiaConfig,
-) -> Callable[[Request], Inertia]:
+def inertia_dependency_factory(config_: InertiaConfig) -> Callable[[Request], Inertia]:
     """
     Create a dependency for Inertia, passing the configuration
     :param config_: InertiaConfig object
     :return: Dependency
     """
+
+    config_.templates.env.add_extension(InertiaExtension)
 
     def inertia_dependency(request: Request) -> Inertia:
         """
@@ -373,3 +393,9 @@ def inertia_dependency_factory(
         return Inertia(request, config_)
 
     return inertia_dependency
+
+
+@lru_cache
+def _read_manifest_file(path: str) -> dict[str, Any]:
+    with open(path, "r") as manifest_file:
+        return json.load(manifest_file)
