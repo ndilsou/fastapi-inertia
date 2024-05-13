@@ -1,6 +1,7 @@
 import json
 from string import Template
 from typing import Any
+from textwrap import dedent
 
 
 def get_stripped_html(
@@ -21,7 +22,7 @@ def get_stripped_html(
         or f'<div id=\'app\' data-page=\'{{"component": "{component_name}", "props": {json.dumps(props)}, "url": "{url}", "version": "1.0"}}\'></div>'
     )
     return (
-        Template("""
+        Template(dedent("""
                    <!DOCTYPE html>
                    <html>
                        <head>
@@ -35,7 +36,7 @@ def get_stripped_html(
                             <script type="module" src="$script_asset_url"></script>
                        </body>
                    </html>
-            """)
+            """))
         .substitute(
             body_content=body_content,
             head=additional_head_content,
