@@ -6,9 +6,10 @@ from starlette.testclient import TestClient
 
 from inertia import Inertia, InertiaResponse, inertia_dependency_factory, InertiaConfig
 
+from .utils import templates
 
 app = FastAPI()
-InertiaDep = Annotated[Inertia, Depends(inertia_dependency_factory(InertiaConfig()))]
+InertiaDep = Annotated[Inertia, Depends(inertia_dependency_factory(InertiaConfig(templates=templates)))]
 
 
 PROPS = {

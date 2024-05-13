@@ -16,6 +16,8 @@ from inertia import (
     inertia_request_validation_exception_handler,
 )
 
+from .utils import templates
+
 
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="secret_key")
@@ -30,7 +32,7 @@ app.add_exception_handler(
 )
 
 InertiaDep = Annotated[
-    Inertia, Depends(inertia_dependency_factory(InertiaConfig(use_flash_errors=True)))
+    Inertia, Depends(inertia_dependency_factory(InertiaConfig(templates=templates, use_flash_errors=True)))
 ]
 
 

@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    {{ head|safe -}}
+    {% if css_link %}{{ css_link|safe }}{% endif %}
+  </head>
+  <body>
+    {{ body_content|safe }}
+    <script type="module" src="{{ script_asset_url }}"></script>
+  </body>
+</html>

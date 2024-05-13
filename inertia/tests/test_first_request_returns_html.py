@@ -1,13 +1,13 @@
 import json
 import os
-from fastapi import FastAPI, Depends
 from typing import Annotated
 
+from fastapi import Depends, FastAPI
 from starlette.testclient import TestClient
 
-from inertia import Inertia, inertia_dependency_factory, InertiaResponse, InertiaConfig
+from inertia import Inertia, InertiaConfig, InertiaResponse, inertia_dependency_factory
 
-from .utils import get_stripped_html
+from .utils import get_stripped_html, templates
 
 app = FastAPI()
 manifest_json = os.path.join(os.path.dirname(__file__), "dummy_manifest_js.json")
@@ -15,23 +15,39 @@ manifest_json_ts = os.path.join(os.path.dirname(__file__), "dummy_manifest_ts.js
 
 CUSTOM_URL = "http://some_other_url"
 
-InertiaDep = Annotated[Inertia, Depends(inertia_dependency_factory(InertiaConfig()))]
+InertiaDep = Annotated[
+    Inertia, Depends(inertia_dependency_factory(InertiaConfig(templates=templates)))
+]
 
 CustomUrlInertiaDep = Annotated[
-    Inertia, Depends(inertia_dependency_factory(InertiaConfig(dev_url=CUSTOM_URL)))
+    Inertia,
+    Depends(
+        inertia_dependency_factory(
+            InertiaConfig(templates=templates, dev_url=CUSTOM_URL)
+        )
+    ),
 ]
 
 ProductionInertiaDep = Annotated[
     Inertia,
     Depends(
         inertia_dependency_factory(
-            InertiaConfig(manifest_json_path=manifest_json, environment="production")
+            InertiaConfig(
+                templates=templates,
+                manifest_json_path=manifest_json,
+                environment="production",
+            )
         )
     ),
 ]
 
 TypescriptInertiaDep = Annotated[
-    Inertia, Depends(inertia_dependency_factory(InertiaConfig(use_typescript=True)))
+    Inertia,
+    Depends(
+        inertia_dependency_factory(
+            InertiaConfig(templates=templates, entrypoint_filename="main.ts")
+        )
+    ),
 ]
 
 TypescriptProductionInertiaDep = Annotated[
@@ -39,9 +55,10 @@ TypescriptProductionInertiaDep = Annotated[
     Depends(
         inertia_dependency_factory(
             InertiaConfig(
+                templates=templates,
                 manifest_json_path=manifest_json_ts,
                 environment="production",
-                use_typescript=True,
+                entrypoint_filename="main.ts",
             )
         )
     ),

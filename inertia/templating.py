@@ -1,4 +1,4 @@
-from typing import Literal, Union
+from typing import Literal
 from typing_extensions import TypedDict, NotRequired
 from jinja2 import nodes
 from jinja2.ext import Extension

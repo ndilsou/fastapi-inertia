@@ -1,12 +1,13 @@
-import pytest
-from fastapi import FastAPI, Depends
 from typing import Annotated, cast
 
+import pytest
+from fastapi import Depends, FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.testclient import TestClient
 
-from inertia import Inertia, inertia_dependency_factory, InertiaResponse, InertiaConfig
+from inertia import Inertia, InertiaConfig, InertiaResponse, inertia_dependency_factory
 
+from .utils import templates
 
 app = FastAPI()
 
@@ -18,14 +19,20 @@ InertiaDep = Annotated[
     Inertia,
     Depends(
         inertia_dependency_factory(
-            InertiaConfig(use_flash_messages=True, flash_message_key=FLASH_MESSAGE_KEY)
+            InertiaConfig(
+                templates=templates,
+                use_flash_messages=True,
+                flash_message_key=FLASH_MESSAGE_KEY,
+            )
         )
     ),
 ]
 InvalidInertiaDep = Annotated[
     Inertia,
     Depends(
-        inertia_dependency_factory(InertiaConfig(flash_message_key=FLASH_MESSAGE_KEY))
+        inertia_dependency_factory(
+            InertiaConfig(templates=templates, flash_message_key=FLASH_MESSAGE_KEY)
+        )
     ),
 ]
 

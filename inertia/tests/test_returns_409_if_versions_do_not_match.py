@@ -1,17 +1,18 @@
-from fastapi import FastAPI, Depends
 from typing import Annotated
 
+from fastapi import Depends, FastAPI
+from fastapi.templating import Jinja2Templates
 from starlette.testclient import TestClient
 
 from inertia import (
     Inertia,
-    inertia_dependency_factory,
-    InertiaResponse,
     InertiaConfig,
+    InertiaResponse,
     InertiaVersionConflictException,
+    inertia_dependency_factory,
     inertia_version_conflict_exception_handler,
 )
-
+from .utils import templates
 
 app = FastAPI()
 app.add_exception_handler(
@@ -19,7 +20,9 @@ app.add_exception_handler(
     inertia_version_conflict_exception_handler,  # type: ignore[arg-type]
 )
 
-InertiaDep = Annotated[Inertia, Depends(inertia_dependency_factory(InertiaConfig()))]
+InertiaDep = Annotated[
+    Inertia, Depends(inertia_dependency_factory(InertiaConfig(templates=templates)))
+]
 
 PROPS = {
     "message": "hello from index",

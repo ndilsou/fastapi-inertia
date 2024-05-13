@@ -8,7 +8,7 @@ from starlette.testclient import TestClient
 
 from inertia import Inertia, inertia_dependency_factory, InertiaResponse, InertiaConfig
 
-from .utils import get_stripped_html
+from .utils import get_stripped_html, templates
 
 app = FastAPI()
 manifest_json = os.path.join(os.path.dirname(__file__), "dummy_manifest_js.json")
@@ -19,7 +19,10 @@ InertiaDep = Annotated[
     Depends(
         inertia_dependency_factory(
             InertiaConfig(
-                ssr_enabled=True, manifest_json_path=manifest_json, ssr_url=SSR_URL
+                ssr_enabled=True,
+                manifest_json_path=manifest_json,
+                ssr_url=SSR_URL,
+                templates=templates,
             )
         )
     ),
