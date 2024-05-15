@@ -59,6 +59,9 @@ def lazy(prop: Union[Callable[[], Any], Any]) -> LazyProp:
 
 
 class InertiaContext(TypedDict):
+    """
+    The jinja template context to pass to render the html for the first request.
+    """
     environment: Literal["development", "production"]
     dev_url: str
     is_ssr: bool

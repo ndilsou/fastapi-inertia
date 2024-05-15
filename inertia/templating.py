@@ -1,4 +1,3 @@
-
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.runtime import Context
@@ -7,9 +6,12 @@ from markupsafe import Markup
 from .utils import InertiaContext
 
 
-
-
 class InertiaExtension(Extension):
+    """
+    Jinja2 extension for Inertia.js that adds the inertia_head and inertia_body tags
+    to a jinja environment to render the head and body of the Inertia.js page.
+    """
+
     tags = set(["inertia_head", "inertia_body"])
 
     def parse(self, parser):
@@ -53,7 +55,13 @@ class InertiaExtension(Extension):
         return Markup("\n".join(fragments))
 
 
-def _vite_dev_head(dev_url: str, is_react: bool = False):
+def _vite_dev_head(dev_url: str = "http://localhost:5173", is_react: bool = False):
+    """
+    Generate the head fragment for a Vite development environment.
+    When is_react is True, the React refresh runtime is injected into the page.
+    :param dev_url: The URL of the Vite development server
+    :param is_react: Whether the project uses React
+    """
     fragments = []
     if is_react:
         fragments.append(f"""\
