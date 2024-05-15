@@ -1,7 +1,8 @@
 from json import JSONEncoder
+from typing import Any, Callable, Literal, Union
 
 from fastapi.encoders import jsonable_encoder
-from typing import Callable, Any, Union
+from typing_extensions import NotRequired, TypedDict
 
 
 class InertiaJsonEncoder(JSONEncoder):
@@ -55,3 +56,15 @@ def lazy(prop: Union[Callable[[], Any], Any]) -> LazyProp:
     :return: Lazy property
     """
     return LazyProp(prop)
+
+
+class InertiaContext(TypedDict):
+    environment: Literal["development", "production"]
+    dev_url: str
+    is_ssr: bool
+    data: str
+    css: list[str]
+    js: str
+    is_react: NotRequired[bool]
+    ssr_head: NotRequired[str]
+    ssr_body: NotRequired[str]

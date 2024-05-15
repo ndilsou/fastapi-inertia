@@ -1,18 +1,18 @@
+import json
 import logging
+from dataclasses import dataclass
+from functools import lru_cache
+from typing import Any, Callable, Dict, Optional, TypedDict, TypeVar, Union, cast
 
 from fastapi import Request, Response, status
-from fastapi.responses import JSONResponse, HTMLResponse
-from typing import Any, Callable, Dict, Optional, TypeVar, TypedDict, Union, cast
-import json
+from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.responses import RedirectResponse
-from functools import lru_cache
-from dataclasses import dataclass
 
-from .templating import InertiaExtension
 from .config import InertiaConfig
 from .exceptions import InertiaVersionConflictException
-from .utils import LazyProp
+from .templating import InertiaExtension
+from .utils import InertiaContext, LazyProp
 
 try:
     from httpx import AsyncClient
@@ -163,7 +163,8 @@ class Inertia:
             js_file = asset_manifest["file"]
 
             self._inertia_files = self.InertiaFiles(
-                css_files=css_files, js_file=js_file
+                css_files=[f"/{css_file}" for css_file in css_files],
+                js_file=f"/{js_file}",
             )
         else:
             js_file = f"{self._config.dev_url}/{self._config.root_directory}/{self._config.entrypoint_filename}"
@@ -248,16 +249,16 @@ class Inertia:
             name=self._config.root_template_filename,
             request=self._request,
             context={
-                "inertia": {
-                    "environment": self._config.environment,
-                    "is_react": self._config.is_react,
-                    "dev_url": self._config.dev_url,
-                    "is_ssr": True,
-                    "ssr_head": displayable_head,
-                    "ssr_body": body,
-                    "js": self._inertia_files.js_file,
-                    "css": self._inertia_files.css_files,
-                },
+                "inertia": InertiaContext(
+                    environment=self._config.environment,
+                    is_react=self._config.is_react,
+                    dev_url=self._config.dev_url,
+                    is_ssr=True,
+                    ssr_head=displayable_head,
+                    ssr_body=body,
+                    js=self._inertia_files.js_file,
+                    css=self._inertia_files.css_files,
+                ),
             },
         )
 
@@ -362,15 +363,15 @@ class Inertia:
             name=self._config.root_template_filename,
             request=self._request,
             context={
-                "inertia": {
-                    "environment": self._config.environment,
-                    "is_react": self._config.is_react,
-                    "dev_url": self._config.dev_url,
-                    "is_ssr": False,
-                    "data": page_json,
-                    "js": self._inertia_files.js_file,
-                    "css": self._inertia_files.css_files,
-                },
+                "inertia": InertiaContext(
+                    environment=self._config.environment,
+                    is_react=self._config.is_react,
+                    dev_url=self._config.dev_url,
+                    is_ssr=False,
+                    data=page_json,
+                    js=self._inertia_files.js_file,
+                    css=self._inertia_files.css_files,
+                ),
             },
         )
 

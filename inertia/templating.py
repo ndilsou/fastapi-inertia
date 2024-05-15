@@ -1,21 +1,12 @@
-from typing import Literal
-from typing_extensions import TypedDict, NotRequired
+
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.runtime import Context
 from markupsafe import Markup
 
+from .utils import InertiaContext
 
-class InertiaContext(TypedDict):
-    environment: Literal["development", "production"]
-    dev_url: str
-    is_ssr: bool
-    is_react: NotRequired[bool]
-    data: str
-    ssr_head: NotRequired[str]
-    ssr_body: NotRequired[str]
-    css: list[str]
-    js: str
+
 
 
 class InertiaExtension(Extension):
