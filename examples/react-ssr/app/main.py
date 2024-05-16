@@ -1,10 +1,21 @@
+from contextlib import asynccontextmanager
+
+import httpx
 from fastapi import FastAPI
-from inertia import InertiaResponse
 from starlette.middleware.sessions import SessionMiddleware
+
+from inertia import InertiaResponse
 
 from .inertia import InertiaJS, configure_inertia
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with httpx.AsyncClient() as client:
+        yield {"client": client}
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key="dont-look-at-me-im-secret")
 configure_inertia(app)
 

@@ -1,9 +1,10 @@
 [tool.poetry]
-name = "demo-app"
+name = "react-ssr"
 version = "0.1.0"
-description = ""
+description = "A simple FastAPI app with Inertia.js and React Typescript using SSR"
 authors = ["Your Name <you@example.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.9"
