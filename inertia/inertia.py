@@ -3,6 +3,7 @@ import logging
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Callable, Dict, Optional, TypedDict, TypeVar, Union, cast
+from typing_extensions import NotRequired
 
 from fastapi import Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -396,7 +397,21 @@ def inertia_dependency_factory(config_: InertiaConfig) -> Callable[[Request], In
     return inertia_dependency
 
 
+class ViteManifestChunk(TypedDict):
+    file: str
+    src: NotRequired[str]
+    isEntry: NotRequired[bool]
+    isDynamicEntry: NotRequired[bool]
+    dynamicImports: NotRequired[list[str]]
+    css: NotRequired[list[str]]
+    assets: NotRequired[list[str]]
+    imports: NotRequired[list[str]]
+
+
+ViteManifest = Dict[str, ViteManifestChunk]
+
+
 @lru_cache
-def _read_manifest_file(path: str) -> dict[str, Any]:
+def _read_manifest_file(path: str) -> ViteManifest:
     with open(path, "r") as manifest_file:
-        return json.load(manifest_file)
+        return cast(ViteManifest, json.load(manifest_file))
