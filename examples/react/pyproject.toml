@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "demo-app"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9"
+fastapi-inertia = { develop = true, path = "../../" }
+fastapi = "^0.111.0"
+uvicorn = "^0.29.0"
+python-multipart = "^0.0.9"
+pydantic = "^2.6.4"
+itsdangerous = "^2.2.0"
+jinja2 = "^3.1.4"
+httpx = "^0.27.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
