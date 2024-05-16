@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from dataclasses import dataclass
@@ -5,6 +6,7 @@ from functools import lru_cache
 from typing import Any, Callable, Dict, Optional, TypedDict, TypeVar, Union, cast
 from typing_extensions import NotRequired
 import posixpath
+import atexit
 
 
 from fastapi import Request, Response, status
@@ -410,11 +412,30 @@ def _read_manifest_file(path: str) -> ViteManifest:
         return cast(ViteManifest, json.load(manifest_file))
 
 
-@lru_cache
+_ASYNC_HTTPX_CLIENT: Optional["AsyncClient"] = None
+
+
 def _get_or_create_httpx_client() -> "AsyncClient":
     """
     Get or create the httpx async client
     :return: The httpx client
     """
 
-    return AsyncClient()
+    global _ASYNC_HTTPX_CLIENT
+
+    if _ASYNC_HTTPX_CLIENT is None:
+        _ASYNC_HTTPX_CLIENT = AsyncClient()
+
+        def close_httpx_client() -> None:
+            # We need to find a way to close the client when the app is shutting down
+            if _ASYNC_HTTPX_CLIENT is not None:
+                try:
+                    asyncio.get().run_until_complete(_ASYNC_HTTPX_CLIENT.aclose())
+                except Exception as exc:
+                    logger.warning(
+                        f"An error occurred while closing the httpx client: {exc}"
+                    )
+
+        atexit.register(close_httpx_client)
+
+    return _ASYNC_HTTPX_CLIENT
