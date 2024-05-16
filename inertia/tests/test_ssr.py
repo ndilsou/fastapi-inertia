@@ -40,8 +40,11 @@ async def index(inertia: InertiaDep) -> InertiaResponse:
     return await inertia.render(COMPONENT, PROPS)
 
 
-# @patch("requests.post")
-@patch.object(httpx.AsyncClient, "post")
+@patch.object(
+    httpx.AsyncClient,
+    "post",
+    return_value=MagicMock(status_code=200),
+)
 def test_calls_inertia_render(post_function: MagicMock) -> None:
     with TestClient(app) as client:
         client.get("/")
@@ -61,7 +64,9 @@ RETURNED_JSON = {"head": ["some info in the head"], "body": "some info in the bo
 
 
 @patch.object(
-    httpx.AsyncClient, "post", return_value=MagicMock(json=lambda: RETURNED_JSON)
+    httpx.AsyncClient,
+    "post",
+    return_value=MagicMock(json=lambda: RETURNED_JSON, status_code=200),
 )
 def test_returns_html(post_function: MagicMock) -> None:
     with open(manifest_json, "r") as manifest_file:
