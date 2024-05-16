@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Callable, Dict, Optional, TypedDict, TypeVar, Union, cast
 from typing_extensions import NotRequired
+import posixpath
+
 
 from fastapi import Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
@@ -163,9 +165,12 @@ class Inertia:
             css_files = asset_manifest.get("css", [])
             js_file = asset_manifest["file"]
 
+            prefix = self._config.assets_prefix or ""
             self._inertia_files = self.InertiaFiles(
-                css_files=[f"/{css_file}" for css_file in css_files],
-                js_file=f"/{js_file}",
+                css_files=[
+                    posixpath.join("/", prefix, css_file) for css_file in css_files
+                ],
+                js_file=posixpath.join("/", prefix, js_file),
             )
         else:
             js_file = f"{self._config.dev_url}/{self._config.root_directory}/{self._config.entrypoint_filename}"
