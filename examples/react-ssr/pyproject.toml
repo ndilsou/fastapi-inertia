@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "react-ssr"
+name = "react-ssr-demo-app"
 version = "0.1.0"
 description = "A simple FastAPI app with Inertia.js and React Typescript using SSR"
 authors = ["Your Name <you@example.com>"]

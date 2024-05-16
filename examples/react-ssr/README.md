@@ -2,7 +2,7 @@
 
 This example demonstrates how to use fastapi-inertia with a React Typescript frontend in SSR mode.
 
-## How to run it:
+## How to run it
 
 Install the python and bun (or node) dependencies:
 
@@ -28,5 +28,5 @@ bun run dist/server/entry-server.js
 Now run the Fastapi backend:
 
 ```bash
-poetry run fastapi dev
+poetry run fastapi run
 ```

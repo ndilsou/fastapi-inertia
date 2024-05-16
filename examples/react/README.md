@@ -2,7 +2,7 @@
 
 This example demonstrates how to use fastapi-inertia with a React Typescript frontend.
 
-## How to run it:
+## How to run it
 
 Install the python and bun (or node) dependencies:
 
@@ -20,5 +20,5 @@ bun run build
 Now run the Fastapi backend:
 
 ```bash
-poetry run fastapi dev
+poetry run fastapi run
 ```
