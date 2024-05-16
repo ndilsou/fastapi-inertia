@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from json import JSONEncoder
-from typing import Literal, Type
+from typing import Literal, Optional, Type
 
 from fastapi.templating import Jinja2Templates
 
@@ -13,25 +13,45 @@ class InertiaConfig:
     Configuration class for Inertia
 
     Attributes:
-        templates (Jinja2Templates): The Jinja2Templates instance to use for rendering the HTML
-        environment (Literal["development", "production"]): The environment the application is running in
-        version (str): The version of Inertia.js to use
-        json_encoder (Type[JSONEncoder]): The JSONEncoder to use for encoding the data
-        manifest_json_path (str): The path to the manifest.json file
-        root_directory (str): The root directory of the project
-        root_template_filename (str): The name of the root template file
-        entrypoint_filename (str): The name of the entrypoint file
-        dev_url (str): The URL of the Vite development server
-        ssr_url (str): The URL of the Vite SSR server
-        ssr_enabled (bool): Whether SSR is enabled
-        is_react (bool): Whether the project uses React. This is used to inject the React refresh runtime into the page in development mode.
-        use_flash_messages (bool): Whether to use flash messages
-        use_flash_errors (bool): Whether to use flash errors
-        flash_message_key (str): The key to use for flash messages
-        flash_error_key (str): The key to use for flash errors
+    ----------
+        templates: Jinja2Templates
+            The Jinja2Templates instance to use for rendering the HTML
+        environment: Literal["development", "production"]
+            The environment the application is running in
+        version: str
+            The version of Inertia.js to use
+        json_encoder: Type[JSONEncoder]
+            The JSONEncoder to use for encoding the data
+        manifest_json_path: str
+            The path to the manifest.json file
+        root_directory: str
+            The root directory of the frontend project
+        root_template_filename: str
+            The name of the root template file
+        entrypoint_filename: str
+            The name of the entrypoint file
+        dev_url: str
+            The URL of the Vite development server
+        ssr_url: str
+            The URL of the Vite SSR server
+        ssr_enabled: bool
+            Whether SSR is enabled
+        is_react: bool
+            Whether the project uses React. This is used to inject the React refresh runtime into the page in development mode.
+        use_flash_messages: bool
+            Whether to use flash messages
+        use_flash_errors: bool
+            Whether to use flash errors
+        flash_message_key: str
+            The key to use for flash messages
+        flash_error_key: str
+            The key to use for flash errors
+        assets_prefix: Optional[str]
+            The prefix to use for assets serving. This only impacts production environments.
     """
 
     templates: Jinja2Templates
+    """The Jinja2Templates instance to use for rendering the HTML"""
     environment: Literal["development", "production"] = "development"
     version: str = "1.0"
     json_encoder: Type[JSONEncoder] = InertiaJsonEncoder
@@ -47,3 +67,4 @@ class InertiaConfig:
     use_flash_errors: bool = False
     flash_message_key: str = "messages"
     flash_error_key: str = "errors"
+    assets_prefix: Optional[str] = None
