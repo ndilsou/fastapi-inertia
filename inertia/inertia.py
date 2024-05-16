@@ -60,7 +60,6 @@ class Inertia:
     _component: str
     _props: dict[str, Any]
     _inertia_files: InertiaFiles
-    _http_client: Optional["AsyncClient"]
 
     def __init__(self, request: Request, config_: InertiaConfig) -> None:
         """
@@ -219,24 +218,13 @@ class Inertia:
 
         return self._deep_transform_callables(_props)
 
-    def _get_or_create_httpx_client(self) -> "AsyncClient":
-        """
-        Get or create the httpx async client
-        :return: The httpx client
-        """
-
-        if self._http_client is None:
-            self._http_client = AsyncClient()
-
-        return self._http_client
-
     async def _render_ssr(self) -> HTMLResponse:
         """
         Render the page using SSR, calling the Inertia SSR server.
         :return: The HTML response
         """
 
-        client: AsyncClient = self._get_or_create_httpx_client()
+        client = _get_or_create_httpx_client()
 
         data = json.dumps(self._get_page_data(), cls=self._config.json_encoder)
         response = await client.post(
@@ -420,3 +408,13 @@ ViteManifest = Dict[str, ViteManifestChunk]
 def _read_manifest_file(path: str) -> ViteManifest:
     with open(path, "r") as manifest_file:
         return cast(ViteManifest, json.load(manifest_file))
+
+
+@lru_cache
+def _get_or_create_httpx_client() -> "AsyncClient":
+    """
+    Get or create the httpx async client
+    :return: The httpx client
+    """
+
+    return AsyncClient()
