@@ -1,18 +1,17 @@
 import asyncio
+import atexit
 import json
 import logging
+import posixpath
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Callable, Dict, Optional, TypedDict, TypeVar, Union, cast
-from typing_extensions import NotRequired
-import posixpath
-import atexit
-
 
 from fastapi import Request, Response, status
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.responses import RedirectResponse
+from typing_extensions import NotRequired
 
 from .config import InertiaConfig
 from .exceptions import InertiaVersionConflictException
@@ -430,7 +429,10 @@ def _get_or_create_httpx_client() -> "AsyncClient":
             # We need to find a way to close the client when the app is shutting down
             if _ASYNC_HTTPX_CLIENT is not None:
                 try:
-                    asyncio.get().run_until_complete(_ASYNC_HTTPX_CLIENT.aclose())
+                    loop = asyncio.get_running_loop()
+                    loop.run_until_complete(_ASYNC_HTTPX_CLIENT.aclose())
+                except RuntimeError:
+                    logger.debug("the event loop is already closed")
                 except Exception as exc:
                     logger.warning(
                         f"An error occurred while closing the httpx client: {exc}"
