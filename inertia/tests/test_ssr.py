@@ -1,5 +1,6 @@
 import json
 import os
+from contextlib import asynccontextmanager
 from typing import Annotated
 from unittest.mock import MagicMock, patch
 
@@ -11,8 +12,16 @@ from inertia import Inertia, InertiaConfig, InertiaResponse, inertia_dependency_
 
 from .utils import get_html_soup, templates
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> None:
+    async with httpx.AsyncClient() as client:
+        yield {"client": client}
+
+
+app = FastAPI(lifespan=lifespan)
 manifest_json = os.path.join(os.path.dirname(__file__), "dummy_manifest_js.json")
+
 
 SSR_URL = "http://some_special_url"
 InertiaDep = Annotated[

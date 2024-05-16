@@ -48,6 +48,8 @@ class InertiaConfig:
             The key to use for flash errors
         assets_prefix: Optional[str]
             The prefix to use for assets serving. This only impacts production environments.
+        http_client_state_key: str
+            The key to use for the HTTP client state
     """
 
     templates: Jinja2Templates
@@ -68,3 +70,4 @@ class InertiaConfig:
     flash_message_key: str = "messages"
     flash_error_key: str = "errors"
     assets_prefix: Optional[str] = None
+    http_client_state_key: str = "client"

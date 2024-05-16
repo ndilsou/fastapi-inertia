@@ -1,5 +1,3 @@
-import asyncio
-import atexit
 import json
 import logging
 import posixpath
@@ -219,13 +217,26 @@ class Inertia:
 
         return self._deep_transform_callables(_props)
 
+    def _get_http_client(self) -> "AsyncClient":
+        """
+        Get the httpx async client from the request state.
+        :return: The httpx client
+        """
+        client = getattr(self._request.state, self._config.http_client_state_key, None)
+        if not client:
+            raise ValueError("httpx client not found in request state")
+        if not isinstance(client, AsyncClient):
+            raise ValueError("httpx client in request state is not an AsyncClient")
+
+        return client
+
     async def _render_ssr(self) -> HTMLResponse:
         """
         Render the page using SSR, calling the Inertia SSR server.
         :return: The HTML response
         """
 
-        client = _get_or_create_httpx_client()
+        client = self._get_http_client()
 
         data = json.dumps(self._get_page_data(), cls=self._config.json_encoder)
         response = await client.post(
@@ -233,6 +244,7 @@ class Inertia:
             json=data,
             headers={"Content-Type": "application/json"},
         )
+
         response.raise_for_status()
         response_json = response.json()
 
@@ -409,35 +421,3 @@ ViteManifest = Dict[str, ViteManifestChunk]
 def _read_manifest_file(path: str) -> ViteManifest:
     with open(path, "r") as manifest_file:
         return cast(ViteManifest, json.load(manifest_file))
-
-
-_ASYNC_HTTPX_CLIENT: Optional["AsyncClient"] = None
-
-
-def _get_or_create_httpx_client() -> "AsyncClient":
-    """
-    Get or create the httpx async client
-    :return: The httpx client
-    """
-
-    global _ASYNC_HTTPX_CLIENT
-
-    if _ASYNC_HTTPX_CLIENT is None:
-        _ASYNC_HTTPX_CLIENT = AsyncClient()
-
-        def close_httpx_client() -> None:
-            # We need to find a way to close the client when the app is shutting down
-            if _ASYNC_HTTPX_CLIENT is not None:
-                try:
-                    loop = asyncio.get_running_loop()
-                    loop.run_until_complete(_ASYNC_HTTPX_CLIENT.aclose())
-                except RuntimeError:
-                    logger.debug("the event loop is already closed")
-                except Exception as exc:
-                    logger.warning(
-                        f"An error occurred while closing the httpx client: {exc}"
-                    )
-
-        atexit.register(close_httpx_client)
-
-    return _ASYNC_HTTPX_CLIENT
